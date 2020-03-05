@@ -33,6 +33,11 @@
             const maxSeconds = d3.max(cyclistData, (d) => d.Seconds);
             const minSeconds = d3.min(cyclistData, (d) => d.Seconds);
 
+            const formatMinutes = d3.format("%M")
+            console.log('testing formatMinutes', formatMinutes("38:15"))
+
+            //const xScale = d3.scaleTime()
+            //
             const xScale = d3.scaleLinear()
             .domain( [ minYear - 1, maxYear] )
             .range( [padding, svgWidth - padding] )
@@ -48,9 +53,15 @@
             .attr('cx', (d) => xScale(d.Year) )
             .attr('cy', (d) => yScale(d.Seconds) )
             .attr('r', 6)
+            .attr('data-xvalue', (d) => xScale(d.Year))
+            .attr('data-yvalue', (d) => yScale(d.Seconds))
             .attr('fill', (d) => {
-                return 'blue'
+                if(d.Doping !== "") {
+                    return 'blue'
+                }
+                return 'orange'
             })
+            .attr('class', 'dot')
             .style('border-width', '3px')
             .style('border-color', 'black')
             .style('opacity', .5)
