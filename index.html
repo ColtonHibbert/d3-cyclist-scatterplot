@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta lang='en-us' charset="utf-8">
+        <script src="https://d3js.org/d3.v5.min.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+    <body>
+        <h1>Doping in Professional Bicycle Racing</h1>
+        <h2>35 Fastest times up Alpe d'Huez</h2>
+        <div id="d3render"></div>
+    </body>
+    <script>
+        async function runPageAsync() {
+            const cyclistData = await fetch('https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json')
+            .then(res => res.json())
+            .catch(err => console.log(err))
+
+            const svgWidth = 900;
+            const svgHeight = 600;
+            const padding = 100;
+
+            const svg = d3.select('#d3render')
+            .append('svg')
+            .attr("width", svgWidth)
+            .attr("height", svgHeight)
+            .attr('id', 'title')
+            .style('background-color', 'lightgray')
+
+            const minYear = d3.min(cyclistData, (d) => d.Year);
+            const maxYear = d3.max(cyclistData, (d) => d.Year);
+
+            const maxSeconds = d3.max(cyclistData, (d) => d.Seconds);
+            const minSeconds = d3.min(cyclistData, (d) => d.Seconds);
+
+            const xScale = d3.scaleLinear()
+            .domain( [ minYear - 1, maxYear] )
+            .range( [padding, svgWidth - padding] )
+
+            const yScale = d3.scaleLinear()
+            .domain( [maxSeconds, minSeconds ] )
+            .range( [svgHeight - padding, padding] )
+
+            svg.selectAll('circle')
+            .data(cyclistData)
+            .enter()
+            .append('circle')
+            .attr('cx', (d) => xScale(d.Year) )
+            .attr('cy', (d) => yScale(d.Seconds) )
+            .attr('r', 6)
+            .attr('fill', (d) => {
+                return 'blue'
+            })
+            .style('border-width', '3px')
+            .style('border-color', 'black')
+            .style('opacity', .5)
+
+
+            const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
+
+            svg.append('g')
+            .attr('transform', `translate(0, ${svgHeight - padding})`)
+            .call(xAxis)
+            .attr('id', 'x-axis')
+            
+
+            const yAxis = d3.axisLeft(yScale);
+
+            svg.append('g')
+            .attr('transform', `translate(${padding}, 0)`)
+            .call(yAxis)
+            .attr('id', 'y-axis')
+
+
+        }
+        runPageAsync();
+        
+    </script>
+    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+</html>
