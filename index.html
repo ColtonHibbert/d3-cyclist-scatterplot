@@ -8,7 +8,7 @@
     <body>
         <h1>Doping in Professional Bicycle Racing</h1>
         <h2>35 Fastest times up Alpe d'Huez</h2>
-        <div id="d3render"></div>
+        <div id="d3render" style="position: relative"></div>
     </body>
     <script>
         async function runPageAsync() {
@@ -25,7 +25,8 @@
             .attr("width", svgWidth)
             .attr("height", svgHeight)
             .attr('id', 'title')
-            .style('background-color', 'lightgray')
+            .style('background-color', 'white')
+
 
             const minYear = d3.min(cyclistData, (d) => d.Year);
             const maxYear = d3.max(cyclistData, (d) => d.Year);
@@ -33,28 +34,81 @@
             const maxSeconds = d3.max(cyclistData, (d) => d.Seconds);
             const minSeconds = d3.min(cyclistData, (d) => d.Seconds);
 
-            const formatMinutes = d3.format("%M")
-            console.log('testing formatMinutes', formatMinutes("38:15"))
-
-            //const xScale = d3.scaleTime()
-            //
+            const start = new Date(2020, 0, 1, 0, 36, 50)
+            const end = new Date(2020, 0, 1, 0, 39, 50)
+        
+           
             const xScale = d3.scaleLinear()
             .domain( [ minYear - 1, maxYear] )
             .range( [padding, svgWidth - padding] )
 
-            const yScale = d3.scaleLinear()
-            .domain( [maxSeconds, minSeconds ] )
+            const yScale = d3.scaleTime()
+            .domain( [ end, start ] )
             .range( [svgHeight - padding, padding] )
+
+            
+            const tooltip = d3.select('#d3render')
+            .append('div')
+            .attr('id', 'tooltip')
+            .style('background-color', 'lightcoral')
+            .style('border-radius', '5px')
+            .style('display', 'flex')
+            .style('flex-direction', 'column')
+            .style('z-index', 1)
+            .style('padding', '5px')
+            .style('position', 'absolute')
+            .style('visibility', 'hidden')
+
+            d3.select('#tooltip')
+            .append('div')
+            .attr('id', 'tooltipname')
+          
+
+            d3.select('#tooltip')
+            .append('div')
+            .attr('id', 'tooltipnationality')
+            
+
+            d3.select('#tooltip')
+            .append('div')
+            .attr('id', 'tooltipyear')
+           
+            
+            d3.select('#tooltip')
+            .append('div')
+            .attr('id', 'tooltiptime')
+        
+
+            d3.select('#tooltip')
+            .append('div')
+            .attr('id', 'tooltipdoping')
+          
 
             svg.selectAll('circle')
             .data(cyclistData)
             .enter()
             .append('circle')
             .attr('cx', (d) => xScale(d.Year) )
-            .attr('cy', (d) => yScale(d.Seconds) )
+            .attr('cy', (d) => {
+                const minutesReg = /^[0-9]{2}/;
+                const secondsReg = /[0-9]{2}$/;
+                const minutes = d.Time.match(minutesReg);
+                const seconds = d.Time.match(secondsReg);
+                const yDate = new Date(2020, 0, 1, 0, minutes, seconds)
+                return yScale(yDate)
+            } )
             .attr('r', 6)
-            .attr('data-xvalue', (d) => xScale(d.Year))
-            .attr('data-yvalue', (d) => yScale(d.Seconds))
+            .attr('data-xvalue', (d) => {
+                return d.Year
+            })
+            .attr('data-yvalue', (d) =>{
+                const minutesReg = /^[0-9]{2}/;
+                const secondsReg = /[0-9]{2}$/;
+                const minutes = d.Time.match(minutesReg);
+                const seconds = d.Time.match(secondsReg);
+                const yDate = new Date(2020, 0, 1, 0, minutes, seconds)
+                return yDate
+            })
             .attr('fill', (d) => {
                 if(d.Doping !== "") {
                     return 'blue'
@@ -65,6 +119,44 @@
             .style('border-width', '3px')
             .style('border-color', 'black')
             .style('opacity', .5)
+            .on('mouseover', (d) => {
+                let cyclistInfo = d;
+                console.log(cyclistInfo);
+                
+                d3.select('#tooltip')
+                .attr('data-year', cyclistInfo.Year)
+                .style('visibility', 'visible')
+                .style('left', () => {
+                    console.log('page x', event.pageX);
+                    return  event.pageX + 'px'
+                })
+                .style('top', () => {
+                    console.log('page y', event.pageY)
+                    return event.pageY + 'px'
+                })
+
+                d3.select('#tooltipname')
+                .text(cyclistInfo.Name)
+
+                d3.select('#tooltipnationality')
+                .text(`Country: ${cyclistInfo.Nationality}`)
+
+                d3.select('#tooltipyear')
+                .text(`Year: ${cyclistInfo.Year}`)
+                
+                d3.select('#tooltiptime')
+                .text(`Time: ${cyclistInfo.Time}`)
+
+                d3.select('#tooltipdoping')
+                .text(cyclistInfo.Doping)
+
+            })
+            .on('mouseout', (d) => {
+                let cyclistInfo = d;
+                console.log('mouseout')
+                d3.select('#tooltip')
+                .style('visibility', 'hidden')
+            })
 
 
             const xAxis = d3.axisBottom(xScale).tickFormat(d3.format('d'));
@@ -75,17 +167,73 @@
             .attr('id', 'x-axis')
             
 
-            const yAxis = d3.axisLeft(yScale);
+            const minuteSecond = d3.timeFormat('%M:%S');
+
+            const yAxis = d3.axisLeft(yScale).tickFormat(minuteSecond);
 
             svg.append('g')
             .attr('transform', `translate(${padding}, 0)`)
             .call(yAxis)
             .attr('id', 'y-axis')
 
+            
+            const legend = d3.select('#d3render')
+            .append('div')
+            .attr('id', 'legend')
+            .style('width', '180px')
+            .style('height', '80px')
+            .style('position', 'absolute')
+            .style('top', '250px')
+            .style('left', '600px')
+            .style('background-color', 'white')
+
+            const legend1Display = d3.select('#legend')
+            .append('div')
+            .attr('id', 'legend1')
+            .style('width', '180px')
+            .style('height', '40px')
+            .style('display', 'flex')
+            .style('flex-direction', 'row')
+            .style('align-items', 'center')
+
+            const legend1Color = d3.select('#legend1')
+            .append('div')
+            .style('width', '20px')
+            .style('height', '20px')
+            .style('background-color', 'blue')
+            .style('border-radius', '5px')
+
+            const legend1Text = d3.select('#legend1')
+            .append('div')
+            .style('margin-left', '10px')
+            .text('Doping Allegations')
+
+
+            const legend2Display = d3.select('#legend')
+            .append('div')
+            .attr('id', 'legend2')
+            .style('width', '180px')
+            .style('height', '40px')
+            .style('display', 'flex')
+            .style('flex-direction', 'row')
+            .style('align-items', 'center')
+
+            const legend2Color = d3.select('#legend2')
+            .append('div')
+            .style('width', '20px')
+            .style('height', '20px')
+            .style('background-color', 'orange')
+            .style('border-radius', '5px')
+
+            const legend2Text = d3.select('#legend2')
+            .append('div')
+            .style('margin-left', '10px')
+            .text('No Doping Allegations')
+
 
         }
         runPageAsync();
         
     </script>
-    <script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>
+    <!--<script src="https://cdn.freecodecamp.org/testable-projects-fcc/v1/bundle.js"></script>-->
 </html>
